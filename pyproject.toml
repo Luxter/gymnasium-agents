@@ -1,0 +1,23 @@
+[project]
+name = "gymnasium_agents"
+version = "1.0.0"
+description = "Set of Reinforcement Learning agents for Gymnasium environments."
+authors = [{ name = "Łukasz Cyran", email = "lukasz.cyran92@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT License" }
+keywords = ["Reinforcement Learning", "game", "RL", "AI", "gymnasium"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = ["gymnasium==0.29.1", "torch==2.1.0"]
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+Repository = "https://github.com/Luxter/gymnasium-agents"
