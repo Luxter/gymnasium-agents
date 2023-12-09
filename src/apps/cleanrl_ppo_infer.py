@@ -45,7 +45,7 @@ def main(agent_path: str):
     seed = 0
 
     env = gym.make("Acrobot-v1", render_mode="human")
-    observation, info = env.reset(seed=seed)
+    observation, _ = env.reset(seed=seed)
 
     agent = Agent(env.observation_space.shape, env.action_space.n)
     agent.load_state_dict(torch.load(agent_path))
@@ -53,10 +53,10 @@ def main(agent_path: str):
     steps_count = 1000
     for _ in range(steps_count):
         action, _, _, _ = agent.get_action_and_value(torch.Tensor(observation))
-        observation, reward, terminated, truncated, info = env.step(action)
+        observation, _, terminated, truncated, _ = env.step(action)
 
         if terminated or truncated:
-            observation, info = env.reset(seed=seed)
+            observation, _ = env.reset(seed=seed)
 
     env.close()
 
