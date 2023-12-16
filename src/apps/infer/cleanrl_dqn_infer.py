@@ -2,23 +2,8 @@ import fire
 import gymnasium as gym
 import numpy as np
 import torch
-import torch.nn as nn
 
-
-# ALGO LOGIC: initialize agent here:
-class QNetwork(nn.Module):
-    def __init__(self, single_observation_space_shape, single_action_space_shape):
-        super().__init__()
-        self.network = nn.Sequential(
-            nn.Linear(np.array(single_observation_space_shape).prod(), 120),
-            nn.ReLU(),
-            nn.Linear(120, 84),
-            nn.ReLU(),
-            nn.Linear(84, single_action_space_shape),
-        )
-
-    def forward(self, x):
-        return self.network(x)
+from apps.train.dqn_train import QNetwork
 
 
 def main(network_path: str, steps_count: int = 1000):
