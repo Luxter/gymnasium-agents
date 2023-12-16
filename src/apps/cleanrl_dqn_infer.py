@@ -21,7 +21,7 @@ class QNetwork(nn.Module):
         return self.network(x)
 
 
-def main(network_path: str):
+def main(network_path: str, steps_count: int = 1000):
     seed = 0
 
     env = gym.make("Acrobot-v1", render_mode="human")
@@ -30,11 +30,10 @@ def main(network_path: str):
     q_network = QNetwork(env.observation_space.shape, env.action_space.n)
     q_network.load_state_dict(torch.load(network_path), strict=True)
 
-    steps_count = 1000
     for _ in range(steps_count):
         q_values = q_network(torch.Tensor(observation))
         action = torch.argmax(q_values, dim=0).item()
-        observation, reward, terminated, truncated, _ = env.step(action)
+        observation, _, terminated, truncated, _ = env.step(action)
 
         if terminated or truncated:
             observation, _ = env.reset(seed=seed)

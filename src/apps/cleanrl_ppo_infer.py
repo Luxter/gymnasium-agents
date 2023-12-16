@@ -41,7 +41,7 @@ class Agent(nn.Module):
         return action, probs.log_prob(action), probs.entropy(), self.critic(x)
 
 
-def main(agent_path: str):
+def main(agent_path: str, steps_count: int = 1000):
     seed = 0
 
     env = gym.make("Acrobot-v1", render_mode="human")
@@ -50,7 +50,6 @@ def main(agent_path: str):
     agent = Agent(env.observation_space.shape, env.action_space.n)
     agent.load_state_dict(torch.load(agent_path))
 
-    steps_count = 1000
     for _ in range(steps_count):
         action, _, _, _ = agent.get_action_and_value(torch.Tensor(observation))
         observation, _, terminated, truncated, _ = env.step(action)
