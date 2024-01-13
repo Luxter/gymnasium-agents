@@ -17,6 +17,7 @@ from lib.seeding import set_seed
 class QNetwork(nn.Module):
     def __init__(self, single_observation_space_shape, single_action_space_shape):
         super().__init__()
+        logger.debug(f"{single_observation_space_shape}, {single_action_space_shape}")
         self.network = nn.Sequential(
             nn.Linear(np.array(single_observation_space_shape).prod(), 120),
             nn.ReLU(),
@@ -35,9 +36,10 @@ def main(total_timesteps: int = 500000):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    env = gym.make("Acrobot-v1")
+    # This needs to be a vectorized environment because replay buffer expects batched data
+    env = gym.vector.SyncVectorEnv([lambda: gym.make("Acrobot-v1")])
 
-    q_network = QNetwork(env.observation_space.shape, env.action_space.n)
+    q_network = QNetwork(env.single_observation_space.shape, env.single_action_space.n)
 
     buffer_size: Final[int] = 10000
 
@@ -49,23 +51,23 @@ def main(total_timesteps: int = 500000):
         handle_timeout_termination=False,
     )
 
-    print(total_timesteps, type(total_timesteps))
-
     # Start
-    observation, _ = env.reset(seed=seed)
+    observations, _ = env.reset(seed=seed)
     for global_step in range(total_timesteps):
         logger.info(f"Global step: {global_step}")
+
         # Action logic
-        q_values = q_network(torch.Tensor(observation))
-        action = torch.argmax(q_values, dim=0).numpy()
+        q_values = q_network(torch.Tensor(observations))
+        actions = torch.argmax(q_values, dim=1).numpy()
 
-        observation, reward, terminated, truncated, info = env.step(action)
-        # This expects ndarrays for all fields.
-        # Do I need to use SyncVectorEnv for environment?
-        replay_buffer.add(observation, action, reward, terminated, truncated, info)
+        next_observations, rewards, terminations, truncations, infos = env.step(actions)
 
-    if terminated or truncated:
-        observation, _ = env.reset(seed=seed)
+        replay_buffer.add(
+            observations, next_observations, actions, rewards, terminations, infos
+        )
+
+    if terminations or truncations:
+        observations, _ = env.reset(seed=seed)
 
     env.close()
 
