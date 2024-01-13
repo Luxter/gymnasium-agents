@@ -48,7 +48,7 @@ def main(
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # This needs to be a vectorized environment because replay buffer expects batched data
+    # This needs to be a vectorized environments because replay buffer expects batched data
     envs = gym.vector.SyncVectorEnv([lambda: gym.make("Acrobot-v1")])
 
     q_network = QNetwork(
@@ -80,12 +80,15 @@ def main(
 
         next_obs, rewards, terminations, truncations, infos = envs.step(actions)
 
-        replay_buffer.add(obs, next_obs, actions, rewards, terminations, infos)
+        # Handle `final_observation` due to auto-reset of vectorized environments
+        real_next_obs = next_obs.copy()
+        for idx, trunc in enumerate(truncations):
+            if trunc:
+                real_next_obs[idx] = infos["final_observation"][idx]
+
+        replay_buffer.add(obs, real_next_obs, actions, rewards, terminations, infos)
 
         obs = next_obs
-
-    if terminations or truncations:
-        obs, _ = envs.reset(seed=seed)
 
     envs.close()
 
