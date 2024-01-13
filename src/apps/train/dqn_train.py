@@ -37,13 +37,13 @@ def linear_schedule(start_eps: float, end_eps: float, duration: int, t: int):
 
 
 def main(
+    seed: int = 0,
     total_timesteps: int = 500000,
     start_eps: float = 1.0,
     end_eps: float = 0.05,
     exploration_fraction: float = 0.5,
     buffer_size: int = 10000,
 ):
-    seed = 0
     set_seed(seed)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
