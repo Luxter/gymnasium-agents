@@ -11,6 +11,7 @@ import numpy as np
 from stable_baselines3.common.buffers import ReplayBuffer
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from lib.seeding import set_seed
 
@@ -37,14 +38,15 @@ def linear_schedule(start_eps: float, end_eps: float, duration: int, t: int):
 
 
 def main(
-    seed: int = 0, # Random seed
-    total_timesteps: int = 500000, # Total number of timesteps
-    start_eps: float = 1.0, # Initial epsilon for exploration
-    end_eps: float = 0.05, # Final epsilon for exploration
+    seed: int = 0,  # Random seed
+    total_timesteps: int = 500000,  # Total number of timesteps
+    start_eps: float = 1.0,  # Initial epsilon for exploration
+    end_eps: float = 0.05,  # Final epsilon for exploration
     exploration_fraction: float = 0.5,  # Fraction of timesteps to explore
-    buffer_size: int = 10000, # Replay memory buffer size
-    batch_size: int = 128, # Batch size for training
-    gamma: float = 0.99, # Discount factor
+    buffer_size: int = 10000,  # Replay memory buffer size
+    learning_rate: float = 2.5e-4,  # Learning rate of optimizer
+    batch_size: int = 128,  # Batch size for training
+    gamma: float = 0.99,  # Discount factor
 ):
     set_seed(seed)
 
@@ -56,6 +58,7 @@ def main(
     q_network = QNetwork(
         envs.single_observation_space.shape, envs.single_action_space.n
     ).to(device)
+    optimizer = torch.optim.Adam(q_network.parameters(), lr=learning_rate)
 
     replay_buffer = ReplayBuffer(
         buffer_size,
@@ -68,8 +71,6 @@ def main(
     # Start
     obs, _ = envs.reset(seed=seed)
     for global_step in range(total_timesteps):
-        logger.info(f"Global step: {global_step}")
-
         # Action logic
         epsilon = linear_schedule(
             start_eps, end_eps, exploration_fraction * total_timesteps, global_step
@@ -96,12 +97,20 @@ def main(
         if global_step > buffer_size:
             batch = replay_buffer.sample(batch_size)
 
-            q_values = q_network(batch.observations)
-            next_q_values = q_network(batch.next_observations)
+            q_values = q_network(batch.observations).gather(1, batch.actions).squeeze()
 
-            max_next_q_values, _ = torch.max(next_q_values, dim=1)
+            target_max, _ = q_network(batch.next_observations).max(dim=1)
             # Zero the Q-values corresponding to terminal states
-            target_q_values = batch.rewards + (1 - batch.dones) * gamma * max_next_q_values
+            target_q_values = (
+                batch.rewards.flatten()
+                + (1 - batch.dones.flatten()) * gamma * target_max
+            )
+
+            loss = F.mse_loss(q_values, target_q_values)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
     envs.close()
 
