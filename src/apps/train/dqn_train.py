@@ -37,14 +37,14 @@ def linear_schedule(start_eps: float, end_eps: float, duration: int, t: int):
 
 
 def main(
-    seed: int = 0,
-    total_timesteps: int = 500000,
-    start_eps: float = 1.0,
-    end_eps: float = 0.05,
-    exploration_fraction: float = 0.5,
-    buffer_size: int = 10000,
-    batch_size: int = 128,
-    gamma: float = 0.99,
+    seed: int = 0, # Random seed
+    total_timesteps: int = 500000, # Total number of timesteps
+    start_eps: float = 1.0, # Initial epsilon for exploration
+    end_eps: float = 0.05, # Final epsilon for exploration
+    exploration_fraction: float = 0.5,  # Fraction of timesteps to explore
+    buffer_size: int = 10000, # Replay memory buffer size
+    batch_size: int = 128, # Batch size for training
+    gamma: float = 0.99, # Discount factor
 ):
     set_seed(seed)
 
