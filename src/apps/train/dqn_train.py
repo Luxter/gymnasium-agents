@@ -43,6 +43,8 @@ def main(
     end_eps: float = 0.05,
     exploration_fraction: float = 0.5,
     buffer_size: int = 10000,
+    batch_size: int = 128,
+    gamma: float = 0.99,
 ):
     set_seed(seed)
 
@@ -53,7 +55,7 @@ def main(
 
     q_network = QNetwork(
         envs.single_observation_space.shape, envs.single_action_space.n
-    )
+    ).to(device)
 
     replay_buffer = ReplayBuffer(
         buffer_size,
@@ -75,8 +77,8 @@ def main(
         if random.random() < epsilon:
             actions = envs.action_space.sample()
         else:
-            q_values = q_network(torch.Tensor(obs))
-            actions = torch.argmax(q_values, dim=1).numpy()
+            q_values = q_network(torch.Tensor(obs).to(device))
+            actions = torch.argmax(q_values, dim=1).cpu().numpy()
 
         next_obs, rewards, terminations, truncations, infos = envs.step(actions)
 
@@ -89,6 +91,17 @@ def main(
         replay_buffer.add(obs, real_next_obs, actions, rewards, terminations, infos)
 
         obs = next_obs
+
+        # Only start training after buffer is filled
+        if global_step > buffer_size:
+            batch = replay_buffer.sample(batch_size)
+
+            q_values = q_network(batch.observations)
+            next_q_values = q_network(batch.next_observations)
+
+            max_next_q_values, _ = torch.max(next_q_values, dim=1)
+            # Zero the Q-values corresponding to terminal states
+            target_q_values = batch.rewards + (1 - batch.dones) * gamma * max_next_q_values
 
     envs.close()
 
