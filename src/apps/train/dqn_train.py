@@ -53,7 +53,9 @@ def main(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # This needs to be a vectorized environments because replay buffer expects batched data
-    envs = gym.vector.SyncVectorEnv([lambda: gym.make("Acrobot-v1")])
+    envs = gym.vector.SyncVectorEnv(
+        [lambda: gym.wrappers.RecordEpisodeStatistics(gym.make("Acrobot-v1"))]
+    )
 
     q_network = QNetwork(
         envs.single_observation_space.shape, envs.single_action_space.n
@@ -82,6 +84,11 @@ def main(
             actions = torch.argmax(q_values, dim=1).cpu().numpy()
 
         next_obs, rewards, terminations, truncations, infos = envs.step(actions)
+
+        if "final_info" in infos:
+            logger.info(
+                f"global_step={global_step}, episodic_return={infos['final_info'][0]['episode']['r']}"
+            )
 
         # Handle `final_observation` due to auto-reset of vectorized environments
         real_next_obs = next_obs.copy()
