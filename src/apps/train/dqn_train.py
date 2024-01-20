@@ -46,7 +46,8 @@ def main(
     buffer_size: int = 10000,  # Replay memory buffer size
     learning_rate: float = 2.5e-4,  # Learning rate of optimizer
     batch_size: int = 128,  # Batch size for training
-    gamma: float = 0.99,  # Discount factor
+    gamma: float = 0.99,  # Discount factor,
+    train_frequency: int = 10,  # How many episodes accumulated between training steps
 ):
     set_seed(seed)
 
@@ -102,22 +103,26 @@ def main(
 
         # Only start training after buffer is filled
         if global_step > buffer_size:
-            batch = replay_buffer.sample(batch_size)
+            if global_step % train_frequency == 0:
+                batch = replay_buffer.sample(batch_size)
 
-            q_values = q_network(batch.observations).gather(1, batch.actions).squeeze()
+                q_values = (
+                    q_network(batch.observations).gather(1, batch.actions).squeeze()
+                )
 
-            target_max, _ = q_network(batch.next_observations).max(dim=1)
-            # Zero the Q-values corresponding to terminal states
-            target_q_values = (
-                batch.rewards.flatten()
-                + (1 - batch.dones.flatten()) * gamma * target_max
-            )
+                with torch.no_grad():
+                    target_max, _ = q_network(batch.next_observations).max(dim=1)
+                    # Zero the Q-values corresponding to terminal states
+                    target_q_values = (
+                        batch.rewards.flatten()
+                        + (1 - batch.dones.flatten()) * gamma * target_max
+                    )
 
-            loss = F.mse_loss(q_values, target_q_values)
+                loss = F.mse_loss(q_values, target_q_values)
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
     envs.close()
 
