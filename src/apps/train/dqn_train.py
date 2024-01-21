@@ -62,18 +62,12 @@ def main(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # This needs to be a vectorized environments because replay buffer expects batched data
-    envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.wrappers.RecordEpisodeStatistics(gym.make(env_id))]
-    )
+    envs = gym.vector.SyncVectorEnv([lambda: gym.wrappers.RecordEpisodeStatistics(gym.make(env_id))])
     envs.action_space.seed(seed)
 
-    q_network = QNetwork(
-        envs.single_observation_space.shape, envs.single_action_space.n
-    ).to(device)
+    q_network = QNetwork(envs.single_observation_space.shape, envs.single_action_space.n).to(device)
     optimizer = torch.optim.Adam(q_network.parameters(), lr=learning_rate)
-    target_network = QNetwork(
-        envs.single_observation_space.shape, envs.single_action_space.n
-    ).to(device)
+    target_network = QNetwork(envs.single_observation_space.shape, envs.single_action_space.n).to(device)
     target_network.load_state_dict(q_network.state_dict())
 
     replay_buffer = ReplayBuffer(
@@ -93,9 +87,7 @@ def main(
     with mlflow.start_run(run_name=run_name):
         for global_step in range(total_timesteps):
             # Action logic
-            epsilon = linear_schedule(
-                start_eps, end_eps, exploration_fraction * total_timesteps, global_step
-            )
+            epsilon = linear_schedule(start_eps, end_eps, exploration_fraction * total_timesteps, global_step)
             if random.random() < epsilon:
                 actions = envs.action_space.sample()
             else:
@@ -106,15 +98,9 @@ def main(
 
             if "final_info" in infos:
                 info = infos["final_info"][0]
-                logger.info(
-                    f"global_step={global_step}, episodic_return={info['episode']['r']}"
-                )
-                mlflow.log_metric(
-                    "episodic_return", info["episode"]["r"], step=global_step
-                )
-                mlflow.log_metric(
-                    "episodic_length", info["episode"]["l"], step=global_step
-                )
+                logger.info(f"global_step={global_step}, episodic_return={info['episode']['r']}")
+                mlflow.log_metric("episodic_return", info["episode"]["r"], step=global_step)
+                mlflow.log_metric("episodic_length", info["episode"]["l"], step=global_step)
 
             # Handle `final_observation` due to auto-reset of vectorized environments
             real_next_obs = next_obs.copy()
@@ -131,27 +117,18 @@ def main(
                 if global_step % train_frequency == 0:
                     batch = replay_buffer.sample(batch_size)
 
-                    q_values = (
-                        q_network(batch.observations).gather(1, batch.actions).squeeze()
-                    )
+                    q_values = q_network(batch.observations).gather(1, batch.actions).squeeze()
 
                     with torch.no_grad():
-                        target_max, _ = target_network(batch.next_observations).max(
-                            dim=1
-                        )
+                        target_max, _ = target_network(batch.next_observations).max(dim=1)
                         # Zero the Q-values corresponding to terminal states
-                        target_q_values = (
-                            batch.rewards.flatten()
-                            + (1 - batch.dones.flatten()) * gamma * target_max
-                        )
+                        target_q_values = batch.rewards.flatten() + (1 - batch.dones.flatten()) * gamma * target_max
 
                     loss = F.mse_loss(q_values, target_q_values)
 
                     if global_step % 100 == 0:
                         mlflow.log_metric("td_loss", loss, step=global_step)
-                        mlflow.log_metric(
-                            "q_values", q_values.mean().item(), step=global_step
-                        )
+                        mlflow.log_metric("q_values", q_values.mean().item(), step=global_step)
                         mlflow.log_metric(
                             "SPS",
                             int(global_step / (time.time() - start_time)),
@@ -168,8 +145,7 @@ def main(
                         target_network.parameters(), q_network.parameters()
                     ):
                         target_network_param.data.copy_(
-                            tau * q_network_param.data
-                            + (1.0 - tau) * target_network_param.data
+                            tau * q_network_param.data + (1.0 - tau) * target_network_param.data
                         )
 
     envs.close()

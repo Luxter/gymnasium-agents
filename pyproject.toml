@@ -27,3 +27,6 @@ build-backend = "setuptools.build_meta"
 
 [project.urls]
 Repository = "https://github.com/Luxter/gymnasium-agents"
+
+[tool.black]
+line-length = 119
