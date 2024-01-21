@@ -49,6 +49,8 @@ def main(
     exploration_fraction: float = 0.5,  # Fraction of timesteps to explore
     buffer_size: int = 10000,  # Replay memory buffer size
     learning_rate: float = 2.5e-4,  # Learning rate of optimizer
+    tau: float = 1.0,  # Target network update rate
+    target_network_frequency: int = 500,  # How often to update target network
     batch_size: int = 128,  # Batch size for training
     gamma: float = 0.99,  # Discount factor,
     train_frequency: int = 10,  # How many episodes accumulated between training steps
@@ -69,6 +71,10 @@ def main(
         envs.single_observation_space.shape, envs.single_action_space.n
     ).to(device)
     optimizer = torch.optim.Adam(q_network.parameters(), lr=learning_rate)
+    target_network = QNetwork(
+        envs.single_observation_space.shape, envs.single_action_space.n
+    ).to(device)
+    target_network.load_state_dict(q_network.state_dict())
 
     replay_buffer = ReplayBuffer(
         buffer_size,
@@ -130,7 +136,9 @@ def main(
                     )
 
                     with torch.no_grad():
-                        target_max, _ = q_network(batch.next_observations).max(dim=1)
+                        target_max, _ = target_network(batch.next_observations).max(
+                            dim=1
+                        )
                         # Zero the Q-values corresponding to terminal states
                         target_q_values = (
                             batch.rewards.flatten()
@@ -153,6 +161,16 @@ def main(
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
+
+                # Soft-update target network
+                if global_step % target_network_frequency == 0:
+                    for target_network_param, q_network_param in zip(
+                        target_network.parameters(), q_network.parameters()
+                    ):
+                        target_network_param.data.copy_(
+                            tau * q_network_param.data
+                            + (1.0 - tau) * target_network_param.data
+                        )
 
     envs.close()
 
