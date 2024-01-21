@@ -63,6 +63,7 @@ def main(
     envs = gym.vector.SyncVectorEnv(
         [lambda: gym.wrappers.RecordEpisodeStatistics(gym.make(env_id))]
     )
+    envs.action_space.seed(seed)
 
     q_network = QNetwork(
         envs.single_observation_space.shape, envs.single_action_space.n
