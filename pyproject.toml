@@ -16,9 +16,11 @@ classifiers = [
 dependencies = [
     "gymnasium==0.29.1",
     "loguru==0.7.2",
+    "numpy==1.26.1",
     "mlflow==2.9.2",
     "stable_baselines3==2.2.1",
     "torch==2.1.0",
+    "typer==0.9.0",
 ]
 
 [build-system]

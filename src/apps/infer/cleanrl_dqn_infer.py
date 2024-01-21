@@ -1,12 +1,12 @@
-import fire
 import gymnasium as gym
 import numpy as np
 import torch
+import typer
 
 from apps.train.dqn_train import QNetwork
 
 
-def main(network_path: str, steps_count: int = 1000):
+def main(network_path: str, steps_count: int = 1000) -> None:
     seed = 0
 
     env = gym.make("Acrobot-v1", render_mode="human")
@@ -27,4 +27,4 @@ def main(network_path: str, steps_count: int = 1000):
 
 
 if __name__ == "__main__":
-    fire.Fire(main)
+    typer.run(main)

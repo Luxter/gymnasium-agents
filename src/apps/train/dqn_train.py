@@ -6,7 +6,6 @@ import random
 import time
 from typing import Final
 
-import fire
 import gymnasium as gym
 from loguru import logger
 import mlflow
@@ -15,12 +14,13 @@ from stable_baselines3.common.buffers import ReplayBuffer
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import typer
 
 from lib.seeding import set_seed
 
 
 class QNetwork(nn.Module):
-    def __init__(self, single_observation_space_shape, single_action_space_shape):
+    def __init__(self, single_observation_space_shape: tuple[int], single_action_space_shape: np.ndarray) -> None:
         super().__init__()
 
         self.network = nn.Sequential(
@@ -31,11 +31,11 @@ class QNetwork(nn.Module):
             nn.Linear(84, single_action_space_shape),
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.network(x)
 
 
-def linear_schedule(start_eps: float, end_eps: float, duration: int, t: int):
+def linear_schedule(start_eps: float, end_eps: float, duration: int, t: int) -> float:
     slope = (end_eps - start_eps) / duration
     return max(start_eps + slope * t, end_eps)
 
@@ -54,7 +54,7 @@ def main(
     batch_size: int = 128,  # Batch size for training
     gamma: float = 0.99,  # Discount factor,
     train_frequency: int = 10,  # How many episodes accumulated between training steps
-):
+) -> None:
     env_id: Final[str] = "Acrobot-v1"
 
     set_seed(seed)
@@ -152,4 +152,4 @@ def main(
 
 
 if __name__ == "__main__":
-    fire.Fire(main)
+    typer.run(main)
