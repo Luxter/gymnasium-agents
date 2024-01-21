@@ -1,12 +1,15 @@
 # Training script for DQN based on CleanRL implementation
 # https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/dqn.py
 
+from pathlib import Path
 import random
+import time
 from typing import Final
 
 import fire
 import gymnasium as gym
 from loguru import logger
+import mlflow
 import numpy as np
 from stable_baselines3.common.buffers import ReplayBuffer
 import torch
@@ -38,6 +41,7 @@ def linear_schedule(start_eps: float, end_eps: float, duration: int, t: int):
 
 
 def main(
+    exp_name: str = Path(__file__).stem,  # Experiment name
     seed: int = 0,  # Random seed
     total_timesteps: int = 500000,  # Total number of timesteps
     start_eps: float = 1.0,  # Initial epsilon for exploration
@@ -49,13 +53,15 @@ def main(
     gamma: float = 0.99,  # Discount factor,
     train_frequency: int = 10,  # How many episodes accumulated between training steps
 ):
+    env_id: Final[str] = "Acrobot-v1"
+
     set_seed(seed)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # This needs to be a vectorized environments because replay buffer expects batched data
     envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.wrappers.RecordEpisodeStatistics(gym.make("Acrobot-v1"))]
+        [lambda: gym.wrappers.RecordEpisodeStatistics(gym.make(env_id))]
     )
 
     q_network = QNetwork(
@@ -71,58 +77,81 @@ def main(
         handle_timeout_termination=False,
     )
 
+    start_time = time.time()
+
     # Start
     obs, _ = envs.reset(seed=seed)
-    for global_step in range(total_timesteps):
-        # Action logic
-        epsilon = linear_schedule(
-            start_eps, end_eps, exploration_fraction * total_timesteps, global_step
-        )
-        if random.random() < epsilon:
-            actions = envs.action_space.sample()
-        else:
-            q_values = q_network(torch.Tensor(obs).to(device))
-            actions = torch.argmax(q_values, dim=1).cpu().numpy()
 
-        next_obs, rewards, terminations, truncations, infos = envs.step(actions)
-
-        if "final_info" in infos:
-            logger.info(
-                f"global_step={global_step}, episodic_return={infos['final_info'][0]['episode']['r']}"
+    run_name = f"{env_id}__{exp_name}__{seed}__{int(time.time())}"
+    with mlflow.start_run(run_name=run_name):
+        for global_step in range(total_timesteps):
+            # Action logic
+            epsilon = linear_schedule(
+                start_eps, end_eps, exploration_fraction * total_timesteps, global_step
             )
+            if random.random() < epsilon:
+                actions = envs.action_space.sample()
+            else:
+                q_values = q_network(torch.Tensor(obs).to(device))
+                actions = torch.argmax(q_values, dim=1).cpu().numpy()
 
-        # Handle `final_observation` due to auto-reset of vectorized environments
-        real_next_obs = next_obs.copy()
-        for idx, trunc in enumerate(truncations):
-            if trunc:
-                real_next_obs[idx] = infos["final_observation"][idx]
+            next_obs, rewards, terminations, truncations, infos = envs.step(actions)
 
-        replay_buffer.add(obs, real_next_obs, actions, rewards, terminations, infos)
-
-        obs = next_obs
-
-        # Only start training after buffer is filled
-        if global_step > buffer_size:
-            if global_step % train_frequency == 0:
-                batch = replay_buffer.sample(batch_size)
-
-                q_values = (
-                    q_network(batch.observations).gather(1, batch.actions).squeeze()
+            if "final_info" in infos:
+                info = infos["final_info"][0]
+                logger.info(
+                    f"global_step={global_step}, episodic_return={info['episode']['r']}"
+                )
+                mlflow.log_metric(
+                    "episodic_return", info["episode"]["r"], step=global_step
+                )
+                mlflow.log_metric(
+                    "episodic_length", info["episode"]["l"], step=global_step
                 )
 
-                with torch.no_grad():
-                    target_max, _ = q_network(batch.next_observations).max(dim=1)
-                    # Zero the Q-values corresponding to terminal states
-                    target_q_values = (
-                        batch.rewards.flatten()
-                        + (1 - batch.dones.flatten()) * gamma * target_max
+            # Handle `final_observation` due to auto-reset of vectorized environments
+            real_next_obs = next_obs.copy()
+            for idx, trunc in enumerate(truncations):
+                if trunc:
+                    real_next_obs[idx] = infos["final_observation"][idx]
+
+            replay_buffer.add(obs, real_next_obs, actions, rewards, terminations, infos)
+
+            obs = next_obs
+
+            # Only start training after buffer is filled
+            if global_step > buffer_size:
+                if global_step % train_frequency == 0:
+                    batch = replay_buffer.sample(batch_size)
+
+                    q_values = (
+                        q_network(batch.observations).gather(1, batch.actions).squeeze()
                     )
 
-                loss = F.mse_loss(q_values, target_q_values)
+                    with torch.no_grad():
+                        target_max, _ = q_network(batch.next_observations).max(dim=1)
+                        # Zero the Q-values corresponding to terminal states
+                        target_q_values = (
+                            batch.rewards.flatten()
+                            + (1 - batch.dones.flatten()) * gamma * target_max
+                        )
 
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
+                    loss = F.mse_loss(q_values, target_q_values)
+
+                    if global_step % 100 == 0:
+                        mlflow.log_metric("td_loss", loss, step=global_step)
+                        mlflow.log_metric(
+                            "q_values", q_values.mean().item(), step=global_step
+                        )
+                        mlflow.log_metric(
+                            "SPS",
+                            int(global_step / (time.time() - start_time)),
+                            step=global_step,
+                        )
+
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
 
     envs.close()
 
