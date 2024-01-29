@@ -6,7 +6,11 @@ import typer
 from apps.train.dqn_train import QNetwork
 
 
-def main(network_path: str, steps_count: int = 1000) -> None:
+def main(
+    network_path: str,  # Path to the model.pt
+    total_timesteps: int = 300,  # Total number of timesteps
+    seed: int = 0,  # Random seed
+) -> None:
     seed = 0
 
     env = gym.make("Acrobot-v1", render_mode="human")
@@ -15,7 +19,7 @@ def main(network_path: str, steps_count: int = 1000) -> None:
     q_network = QNetwork(env.observation_space.shape, env.action_space.n)
     q_network.load_state_dict(torch.load(network_path), strict=True)
 
-    for _ in range(steps_count):
+    for _ in range(total_timesteps):
         q_values = q_network(torch.Tensor(observation))
         action = torch.argmax(q_values, dim=0).item()
         observation, _, terminated, truncated, _ = env.step(action)

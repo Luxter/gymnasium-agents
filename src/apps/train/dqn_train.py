@@ -5,6 +5,7 @@ from pathlib import Path
 import random
 import time
 from typing import Final
+from urllib.parse import urlparse
 
 import gymnasium as gym
 from loguru import logger
@@ -147,6 +148,11 @@ def main(
                         target_network_param.data.copy_(
                             tau * q_network_param.data + (1.0 - tau) * target_network_param.data
                         )
+
+        artifact_path = urlparse(mlflow.get_artifact_uri()).path
+        model_path = Path(f"{artifact_path}/model.pt")
+        logger.success(f"Saving model to {model_path}")
+        torch.save(q_network.state_dict(), model_path)
 
     envs.close()
 
