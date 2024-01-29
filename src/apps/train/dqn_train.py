@@ -44,6 +44,7 @@ def linear_schedule(start_eps: float, end_eps: float, duration: int, t: int) -> 
 def main(
     exp_name: str = Path(__file__).stem,  # Experiment name
     seed: int = 0,  # Random seed
+    env_id: str = "Acrobot-v1",  # Environment ID
     total_timesteps: int = 500000,  # Total number of timesteps
     start_eps: float = 1.0,  # Initial epsilon for exploration
     end_eps: float = 0.05,  # Final epsilon for exploration
@@ -56,8 +57,6 @@ def main(
     gamma: float = 0.99,  # Discount factor,
     train_frequency: int = 10,  # How many episodes accumulated between training steps
 ) -> None:
-    env_id: Final[str] = "Acrobot-v1"
-
     set_seed(seed)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

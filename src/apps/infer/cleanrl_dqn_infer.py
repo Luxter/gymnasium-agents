@@ -8,12 +8,13 @@ from apps.train.dqn_train import QNetwork
 
 def main(
     network_path: str,  # Path to the model.pt
-    total_timesteps: int = 300,  # Total number of timesteps
+    env_id: str = "Acrobot-v1",  # Environment ID
+    total_timesteps: int = 1000,  # Total number of timesteps
     seed: int = 0,  # Random seed
 ) -> None:
     seed = 0
 
-    env = gym.make("Acrobot-v1", render_mode="human")
+    env = gym.make(env_id, render_mode="human")
     observation, _ = env.reset(seed=seed)
 
     q_network = QNetwork(env.observation_space.shape, env.action_space.n)
