@@ -12,8 +12,6 @@ def main(
     total_timesteps: int = 1000,  # Total number of timesteps
     seed: int = 0,  # Random seed
 ) -> None:
-    seed = 0
-
     env = gym.make(env_id, render_mode="human")
     observation, _ = env.reset(seed=seed)
 
