@@ -99,6 +99,8 @@ def main(
     run_name = f"{env_id}__{exp_name}__{seed}__{int(time.time())}"
     with mlflow.start_run(run_name=run_name):
         for iteration in range(1, num_iterations + 1):
+            # TODO(lcyran): Add learning rate annealing here
+
             for step in range(num_steps):
                 global_step += num_envs
                 obs[step] = next_obs
@@ -160,6 +162,16 @@ def main(
                     _, newlogprob, entropy, newvalue = agent.get_action_and_value(b_obs[mb_inds], b_actions[mb_inds])
                     logratio = newlogprob - b_logprobs[mb_inds]
                     ratio = torch.exp(logratio)
+
+                    # TODO(lcyran): Add approximate KL constraint here
+
+                    mb_advantages = b_advantages[mb_inds]
+
+                    # TODO(lcyran): Add advantage normalization here
+
+                    
+
+
 
 if __name__ == "__main__":
     typer.run(main)
