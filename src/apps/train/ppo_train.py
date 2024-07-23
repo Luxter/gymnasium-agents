@@ -70,6 +70,7 @@ def main(
     update_epochs: int = 4,  # Number of epochs to update the policy
     norm_adv: bool = True,  # Whether to normalize the advantages
     clip_coef: float = 0.2,  # Surrogate clipping coefficient
+    clip_vloss: bool = True,  # Whether to clip the value loss
     ent_coef: float = 0.01,  # Entropy coefficient
     vf_coef: float = 0.5,  # Value function coefficient
     max_grad_norm: float = 0.5,  # Maximum gradient norm
@@ -187,8 +188,16 @@ def main(
                     pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
                     # Value loss
-                    # TODO(lcyran): Add value loss clipping here
-                    v_loss = 0.5 * ((newvalue - b_returns[mb_inds]) ** 2).mean()
+                    if clip_vloss:
+                        v_loss_unclipped = (newvalue - b_returns[mb_inds]) ** 2
+                        v_clipped = b_values[mb_inds] + torch.clamp(
+                            newvalue - b_values[mb_inds], -clip_coef, clip_coef
+                        )
+                        v_loss_clipped = (v_clipped - b_returns[mb_inds]) ** 2
+                        v_loss_max = torch.max(v_loss_unclipped, v_loss_clipped)
+                        v_loss = 0.5 * v_loss_max.mean()
+                    else:
+                        v_loss = 0.5 * ((newvalue - b_returns[mb_inds]) ** 2).mean()
 
                     # Entropy loss
                     entropy_loss = entropy.mean()
