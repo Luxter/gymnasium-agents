@@ -59,10 +59,11 @@ def main(
     exp_name: str = Path(__file__).stem,  # Experiment name
     seed: int = 0,  # Random seed
     env_id: str = "Acrobot-v1",  # Environment ID
-    total_timesteps: int = 50000,  # Total number of timesteps
+    total_timesteps: int = 500000,  # Total number of timesteps
     learning_rate: float = 2.5e-4,  # Learning rate of optimizer
     num_envs: int = 4,  # Number of parallel environments
     num_steps: int = 128,  # Number of steps in each environment per policy rollout
+    anneal_lr: bool = True,  # Whether to anneal the learning rate
     gamma: float = 0.99,  # Discount factor gamma
     gae_lambda: float = 0.95,  # Generalized advantage estimation lambda
     num_minibatches: int = 4,  # Number of minibatches to split the batch
@@ -103,7 +104,11 @@ def main(
     run_name = f"{env_id}__{exp_name}__{seed}__{int(time.time())}"
     with mlflow.start_run(run_name=run_name):
         for iteration in range(1, num_iterations + 1):
-            # TODO(lcyran): Add learning rate annealing here
+            # Learning rate annealing
+            if anneal_lr:
+                frac = 1.0 - (iteration - 1.0) / num_iterations
+                lrnow = learning_rate * frac
+                optimizer.param_groups[0]["lr"] = lrnow
 
             for step in range(num_steps):
                 global_step += num_envs
@@ -157,7 +162,7 @@ def main(
 
             b_inds = np.arange(batch_size)
 
-            for epoch in range(update_epochs):
+            for _ in range(update_epochs):
                 np.random.shuffle(b_inds)
                 for start in range(0, batch_size, minibatch_size):
                     end = start + minibatch_size
