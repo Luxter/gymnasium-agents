@@ -202,7 +202,11 @@ def main(
 
             # TODO(lcyran): Add explained variance calculation here
 
-            # TODO(lcyran): Add logging here
+            mlflow.log_metric("learning_rate", optimizer.param_groups[0]["lr"], step=global_step)
+            mlflow.log_metric("loss/policy", pg_loss.item(), step=global_step)
+            mlflow.log_metric("loss/value", v_loss.item(), step=global_step)
+            mlflow.log_metric("loss/entropy", entropy.mean().item(), step=global_step)
+            mlflow.log_metric("loss/total", loss.item(), step=global_step)
 
         artifact_path = urlparse(mlflow.get_artifact_uri()).path
         model_path = Path(f"{artifact_path}/model.pt")
