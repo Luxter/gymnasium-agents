@@ -72,6 +72,7 @@ def main(
     clip_coef: float = 0.2,  # Surrogate clipping coefficient
     ent_coef: float = 0.01,  # Entropy coefficient
     vf_coef: float = 0.5,  # Value function coefficient
+    max_grad_norm: float = 0.5,  # Maximum gradient norm
 ):
     batch_size = num_envs * num_steps
     num_iterations = total_timesteps // batch_size
@@ -80,7 +81,6 @@ def main(
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Does this need to be vectorized environment?
     envs = gym.vector.SyncVectorEnv(
         [lambda: gym.wrappers.RecordEpisodeStatistics(gym.make(env_id)) for _ in range(num_envs)]
     )
@@ -178,7 +178,6 @@ def main(
 
                     mb_advantages = b_advantages[mb_inds]
 
-                    # TODO(lcyran): Add advantage normalization here
                     if norm_adv:
                         mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
 
@@ -198,7 +197,7 @@ def main(
 
                     optimizer.zero_grad()
                     loss.backward()
-                    # TODO(lcyran): Add gradient clipping here
+                    nn.utils.clip_grad_norm_(agent.parameters(), max_grad_norm)
                     optimizer.step()
 
                 # TODO(lcyran): Add early stopping here
