@@ -46,7 +46,7 @@ class Agent(nn.Module):
         return self.critic(x)
 
     def get_action_and_value(
-        self, x: torch.Tensor, action: torch.Tensor = None
+        self, x: torch.Tensor, action: torch.Tensor | None = None
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         logits = self.actor(x)
         probs = Categorical(logits=logits)
@@ -195,6 +195,7 @@ def main(
                     pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
                     # Value loss
+                    newvalue = newvalue.view(-1)
                     if clip_vloss:
                         v_loss_unclipped = (newvalue - b_returns[mb_inds]) ** 2
                         v_clipped = b_values[mb_inds] + torch.clamp(
