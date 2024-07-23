@@ -1,4 +1,5 @@
 import gymnasium as gym
+from loguru import logger
 import torch
 import typer
 
@@ -16,6 +17,7 @@ def main(
 
     agent = Agent(env.observation_space.shape, env.action_space.n)
     agent.load_state_dict(torch.load(agent_path))
+    logger.success(f"Loaded agent from {agent_path}")
 
     for _ in range(total_timesteps):
         action, _, _, _ = agent.get_action_and_value(torch.Tensor(observation))
@@ -25,6 +27,8 @@ def main(
             observation, _ = env.reset(seed=seed)
 
     env.close()
+
+    logger.success("Inference finished")
 
 
 if __name__ == "__main__":

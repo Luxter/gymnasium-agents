@@ -4,7 +4,6 @@
 from pathlib import Path
 import random
 import time
-from typing import Final
 from urllib.parse import urlparse
 
 import gymnasium as gym

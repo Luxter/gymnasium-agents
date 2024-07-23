@@ -1,4 +1,5 @@
 import gymnasium as gym
+from loguru import logger
 import numpy as np
 import torch
 import typer
@@ -17,6 +18,7 @@ def main(
 
     q_network = QNetwork(env.observation_space.shape, env.action_space.n)
     q_network.load_state_dict(torch.load(network_path), strict=True)
+    logger.success(f"Loaded agent from {network_path}")
 
     for _ in range(total_timesteps):
         q_values = q_network(torch.Tensor(observation))
@@ -27,6 +29,8 @@ def main(
             observation, _ = env.reset(seed=seed)
 
     env.close()
+
+    logger.success("Inference finished")
 
 
 if __name__ == "__main__":

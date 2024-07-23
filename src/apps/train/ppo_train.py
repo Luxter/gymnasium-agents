@@ -3,6 +3,7 @@
 
 from pathlib import Path
 import time
+from urllib.parse import urlparse
 
 import gymnasium as gym
 from loguru import logger
@@ -191,12 +192,19 @@ def main(
                     loss.backward()
                     # TODO(lcyran): Add gradient clipping here
                     optimizer.step()
-                
+
                 # TODO(lcyran): Add early stopping here
-            
+
             # TODO(lcyran): Add explained variance calculation here
-            
+
             # TODO(lcyran): Add logging here
+
+        artifact_path = urlparse(mlflow.get_artifact_uri()).path
+        model_path = Path(f"{artifact_path}/model.pt")
+        logger.success(f"Saving model to {model_path}")
+        torch.save(agent.state_dict(), model_path)
+
+    envs.close()
 
 
 if __name__ == "__main__":
