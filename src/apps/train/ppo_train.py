@@ -58,7 +58,7 @@ def main(
     exp_name: str = Path(__file__).stem,  # Experiment name
     seed: int = 0,  # Random seed
     env_id: str = "Acrobot-v1",  # Environment ID
-    total_timesteps: int = 5000,  # Total number of timesteps
+    total_timesteps: int = 50000,  # Total number of timesteps
     learning_rate: float = 2.5e-4,  # Learning rate of optimizer
     num_envs: int = 4,  # Number of parallel environments
     num_steps: int = 128,  # Number of steps in each environment per policy rollout
@@ -124,9 +124,10 @@ def main(
 
                 if "final_info" in infos:
                     for info in infos["final_info"]:
-                        logger.info(f"global_step={global_step}, episodic_return={info['episode']['r']}")
-                        mlflow.log_metric("episodic_return", info["episode"]["r"], step=global_step)
-                        mlflow.log_metric("episodic_length", info["episode"]["l"], step=global_step)
+                        if info and "episode" in info:
+                            logger.info(f"global_step={global_step}, episodic_return={info['episode']['r']}")
+                            mlflow.log_metric("episodic_return", info["episode"]["r"], step=global_step)
+                            mlflow.log_metric("episodic_length", info["episode"]["l"], step=global_step)
 
             # Generalized advantage estimation calculation
             with torch.no_grad():
@@ -183,8 +184,13 @@ def main(
 
                     # Entropy loss
                     entropy_loss = entropy.mean()
-                    
+
                     loss = pg_loss - ent_coef * entropy_loss + vf_coef * v_loss
+
+                    optimizer.zero_grad()
+                    loss.backward()
+                    # TODO(lcyran): Add gradient clipping here
+                    optimizer.step()
 
 
 if __name__ == "__main__":
