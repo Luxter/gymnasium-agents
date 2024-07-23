@@ -95,6 +95,7 @@ def main(
     with mlflow.start_run(run_name=run_name):
         for iteration in range(1, num_iterations + 1):
             for step in range(num_steps):
+                global_step += num_envs
                 obs[step] = next_obs
                 dones[step] = next_done
 
@@ -111,10 +112,10 @@ def main(
                 next_done = torch.Tensor(next_done).to(device)
 
                 if "final_info" in infos:
-                    info = infos["final_info"][0]
-                    logger.info(f"global_step={global_step}, episodic_return={info['episode']['r']}")
-                    mlflow.log_metric("episodic_return", info["episode"]["r"], step=global_step)
-                    mlflow.log_metric("episodic_length", info["episode"]["l"], step=global_step)
+                    for info in infos["final_info"]:
+                        logger.info(f"global_step={global_step}, episodic_return={info['episode']['r']}")
+                        mlflow.log_metric("episodic_return", info["episode"]["r"], step=global_step)
+                        mlflow.log_metric("episodic_length", info["episode"]["l"], step=global_step)
 
 
 if __name__ == "__main__":
