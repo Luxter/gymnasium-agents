@@ -100,6 +100,7 @@ def main(
 
     # Start
     global_step = 0
+    start_time = time.time()
     next_obs, _ = envs.reset(seed=seed)
     next_obs = torch.Tensor(next_obs).to(device)
     next_done = torch.zeros(num_envs).to(device)
@@ -223,7 +224,9 @@ def main(
             var_y = torch.var(y_true)
             explained_var = torch.nan if var_y == 0 else 1 - torch.var(y_true - y_pred) / var_y
 
-            mlflow.log_metric("learning_rate", optimizer.param_groups[0]["lr"], step=global_step)
+            sps = int(global_step / (time.time() - start_time))
+
+            mlflow.log_metric("charts/learning_rate", optimizer.param_groups[0]["lr"], step=global_step)
             mlflow.log_metric("loss/policy", pg_loss.item(), step=global_step)
             mlflow.log_metric("loss/value", v_loss.item(), step=global_step)
             mlflow.log_metric("loss/entropy", entropy.mean().item(), step=global_step)
@@ -232,6 +235,8 @@ def main(
             mlflow.log_metric("loss/approx_kl", approx_kl.item(), step=global_step)
             mlflow.log_metric("loss/clipfrac", np.mean(clipfracs), step=global_step)
             mlflow.log_metric("loss/explained_variance", explained_var.item(), step=global_step)
+            logger.info(f"SPS: {sps}")
+            mlflow.log_metric("charts/SPS", sps, step=global_step)
 
         artifact_path = urlparse(mlflow.get_artifact_uri()).path
         model_path = Path(f"{artifact_path}/model.pt")
