@@ -163,6 +163,7 @@ def main(
             b_values = values.reshape(-1)
 
             b_inds = np.arange(batch_size)
+            clipfracs = []
 
             for _ in range(update_epochs):
                 np.random.shuffle(b_inds)
@@ -175,7 +176,11 @@ def main(
                     logratio = newlogprob - b_logprobs[mb_inds]
                     ratio = torch.exp(logratio)
 
-                    # TODO(lcyran): Add approximate KL constraint here
+                    # Approximate KL divergence and fraction clipped
+                    with torch.no_grad():
+                        old_approx_kl = (-logratio).mean()
+                        approx_kl = ((ratio - 1) - logratio).mean()
+                        clipfracs += [((ratio - 1).abs() > clip_coef).float().mean().item()]
 
                     mb_advantages = b_advantages[mb_inds]
 
@@ -220,6 +225,9 @@ def main(
             mlflow.log_metric("loss/value", v_loss.item(), step=global_step)
             mlflow.log_metric("loss/entropy", entropy.mean().item(), step=global_step)
             mlflow.log_metric("loss/total", loss.item(), step=global_step)
+            mlflow.log_metric("loss/approx_kl_old", old_approx_kl.item(), step=global_step)
+            mlflow.log_metric("loss/approx_kl", approx_kl.item(), step=global_step)
+            mlflow.log_metric("loss/clipfrac", np.mean(clipfracs), step=global_step)
             mlflow.log_metric("loss/explained_variance", explained_var.item(), step=global_step)
 
         artifact_path = urlparse(mlflow.get_artifact_uri()).path
