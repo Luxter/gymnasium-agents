@@ -64,9 +64,12 @@ def main(
     num_steps: int = 128,  # Number of steps in each environment per policy rollout
     gamma: float = 0.99,  # Discount factor gamma
     gae_lambda: float = 0.95,  # Generalized advantage estimation lambda
+    num_minibatches: int = 4,  # Number of minibatches to split the batch
+    update_epochs: int = 4,  # Number of epochs to update the policy
 ):
-    batch_size = int(num_envs * num_steps)
+    batch_size = num_envs * num_steps
     num_iterations = total_timesteps // batch_size
+    minibatch_size = batch_size // num_minibatches
     set_seed(seed)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -120,6 +123,7 @@ def main(
                         mlflow.log_metric("episodic_return", info["episode"]["r"], step=global_step)
                         mlflow.log_metric("episodic_length", info["episode"]["l"], step=global_step)
 
+            # Generalized advantage estimation calculation
             with torch.no_grad():
                 next_value = agent.get_value(next_obs).reshape(1, -1)
                 advantages = torch.zeros_like(rewards).to(device)
@@ -134,6 +138,28 @@ def main(
                     delta = rewards[t] + gamma * next_values * next_nonterminal - values[t]
                     advantages[t] = lastgaelam = delta + gamma * gae_lambda * next_nonterminal * lastgaelam
                 returns = advantages + values
+
+            # Flatten the batch
+            # b means "batch"
+            b_obs = obs.reshape((-1,) + envs.single_observation_space.shape)
+            b_logprobs = logprobs.reshape(-1)
+            b_actions = actions.reshape((-1,) + envs.single_action_space.shape)
+            b_advantages = advantages.reshape(-1)
+            b_returns = returns.reshape(-1)
+            b_values = values.reshape(-1)
+
+            b_inds = np.arange(batch_size)
+
+            for epoch in range(update_epochs):
+                np.random.shuffle(b_inds)
+                for start in range(0, batch_size, minibatch_size):
+                    end = start + minibatch_size
+                    # mb means "mini batch"
+                    mb_inds = b_inds[start:end]
+
+                    _, newlogprob, entropy, newvalue = agent.get_action_and_value(b_obs[mb_inds], b_actions[mb_inds])
+                    logratio = newlogprob - b_logprobs[mb_inds]
+                    ratio = torch.exp(logratio)
 
 if __name__ == "__main__":
     typer.run(main)
