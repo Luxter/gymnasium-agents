@@ -175,9 +175,9 @@ def main(
                     pg_loss2 = -mb_advantages * torch.clamp(ratio, 1.0 - clip_coef, 1.0 + clip_coef)
                     pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
-
-
-
+                    # Value loss
+                    # TODO(lcyran): Add value loss clipping here
+                    v_loss = 0.5 * ((newvalue - b_returns[mb_inds]) ** 2).mean()
 
 
 if __name__ == "__main__":
