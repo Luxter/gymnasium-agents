@@ -68,6 +68,7 @@ def main(
     gae_lambda: float = 0.95,  # Generalized advantage estimation lambda
     num_minibatches: int = 4,  # Number of minibatches to split the batch
     update_epochs: int = 4,  # Number of epochs to update the policy
+    norm_adv: bool = True,  # Whether to normalize the advantages
     clip_coef: float = 0.2,  # Surrogate clipping coefficient
     ent_coef: float = 0.01,  # Entropy coefficient
     vf_coef: float = 0.5,  # Value function coefficient
@@ -178,6 +179,8 @@ def main(
                     mb_advantages = b_advantages[mb_inds]
 
                     # TODO(lcyran): Add advantage normalization here
+                    if norm_adv:
+                        mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
 
                     # Policy loss
                     pg_loss1 = -mb_advantages * ratio
