@@ -129,7 +129,7 @@ def main(
                 next_obs, reward, terminations, truncations, infos = envs.step(action)
                 next_done = np.logical_or(terminations, truncations)
                 next_obs = torch.Tensor(next_obs).to(device)
-                rewards[step] = torch.Tensor(reward).to(device)
+                rewards[step] = torch.Tensor(reward).to(device).view(-1)
                 next_done = torch.Tensor(next_done).to(device)
 
                 if "final_info" in infos:
@@ -176,13 +176,13 @@ def main(
 
                     _, newlogprob, entropy, newvalue = agent.get_action_and_value(b_obs[mb_inds], b_actions[mb_inds])
                     logratio = newlogprob - b_logprobs[mb_inds]
-                    ratio = torch.exp(logratio)
+                    ratio = logratio.exp()
 
                     # Approximate KL divergence and fraction clipped
                     with torch.no_grad():
                         old_approx_kl = (-logratio).mean()
-                        approx_kl = ((ratio - 1) - logratio).mean()
-                        clipfracs += [((ratio - 1).abs() > clip_coef).float().mean().item()]
+                        approx_kl = ((ratio - 1.0) - logratio).mean()
+                        clipfracs += [((ratio - 1.0).abs() > clip_coef).float().mean().item()]
 
                     mb_advantages = b_advantages[mb_inds]
 
