@@ -211,13 +211,16 @@ def main(
 
                 # TODO(lcyran): Add early stopping here
 
-            # TODO(lcyran): Add explained variance calculation here
+            y_pred, y_true = b_values, b_returns
+            var_y = torch.var(y_true)
+            explained_var = torch.nan if var_y == 0 else 1 - torch.var(y_true - y_pred) / var_y
 
             mlflow.log_metric("learning_rate", optimizer.param_groups[0]["lr"], step=global_step)
             mlflow.log_metric("loss/policy", pg_loss.item(), step=global_step)
             mlflow.log_metric("loss/value", v_loss.item(), step=global_step)
             mlflow.log_metric("loss/entropy", entropy.mean().item(), step=global_step)
             mlflow.log_metric("loss/total", loss.item(), step=global_step)
+            mlflow.log_metric("loss/explained_variance", explained_var.item(), step=global_step)
 
         artifact_path = urlparse(mlflow.get_artifact_uri()).path
         model_path = Path(f"{artifact_path}/model.pt")
