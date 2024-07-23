@@ -66,6 +66,7 @@ def main(
     gae_lambda: float = 0.95,  # Generalized advantage estimation lambda
     num_minibatches: int = 4,  # Number of minibatches to split the batch
     update_epochs: int = 4,  # Number of epochs to update the policy
+    clip_coef: float = 0.2,  # Surrogate clipping coefficient
 ):
     batch_size = num_envs * num_steps
     num_iterations = total_timesteps // batch_size
@@ -169,7 +170,13 @@ def main(
 
                     # TODO(lcyran): Add advantage normalization here
 
-                    
+                    # Policy loss
+                    pg_loss1 = -mb_advantages * ratio
+                    pg_loss2 = -mb_advantages * torch.clamp(ratio, 1.0 - clip_coef, 1.0 + clip_coef)
+                    pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+
+
+
 
 
 
