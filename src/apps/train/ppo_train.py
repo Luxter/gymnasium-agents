@@ -74,10 +74,11 @@ def main(
     ent_coef: float = 0.01,  # Entropy coefficient
     vf_coef: float = 0.5,  # Value function coefficient
     max_grad_norm: float = 0.5,  # Maximum gradient norm
+    target_kl: float = None,  # Target KL divergence
 ):
     batch_size = num_envs * num_steps
-    num_iterations = total_timesteps // batch_size
     minibatch_size = batch_size // num_minibatches
+    num_iterations = total_timesteps // batch_size
     set_seed(seed)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -214,7 +215,9 @@ def main(
                     nn.utils.clip_grad_norm_(agent.parameters(), max_grad_norm)
                     optimizer.step()
 
-                # TODO(lcyran): Add early stopping here
+                # Early stopping
+                if target_kl is not None and approx_kl > target_kl:
+                    break
 
             y_pred, y_true = b_values, b_returns
             var_y = torch.var(y_true)
