@@ -191,6 +191,12 @@ def main(
                     loss.backward()
                     # TODO(lcyran): Add gradient clipping here
                     optimizer.step()
+                
+                # TODO(lcyran): Add early stopping here
+            
+            # TODO(lcyran): Add explained variance calculation here
+            
+            # TODO(lcyran): Add logging here
 
 
 if __name__ == "__main__":
