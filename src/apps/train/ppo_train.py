@@ -67,6 +67,8 @@ def main(
     num_minibatches: int = 4,  # Number of minibatches to split the batch
     update_epochs: int = 4,  # Number of epochs to update the policy
     clip_coef: float = 0.2,  # Surrogate clipping coefficient
+    ent_coef: float = 0.01,  # Entropy coefficient
+    vf_coef: float = 0.5,  # Value function coefficient
 ):
     batch_size = num_envs * num_steps
     num_iterations = total_timesteps // batch_size
@@ -178,6 +180,11 @@ def main(
                     # Value loss
                     # TODO(lcyran): Add value loss clipping here
                     v_loss = 0.5 * ((newvalue - b_returns[mb_inds]) ** 2).mean()
+
+                    # Entropy loss
+                    entropy_loss = entropy.mean()
+                    
+                    loss = pg_loss - ent_coef * entropy_loss + vf_coef * v_loss
 
 
 if __name__ == "__main__":
