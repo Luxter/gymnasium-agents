@@ -62,6 +62,8 @@ def main(
     learning_rate: float = 2.5e-4,  # Learning rate of optimizer
     num_envs: int = 4,  # Number of parallel environments
     num_steps: int = 128,  # Number of steps in each environment per policy rollout
+    gamma: float = 0.99,  # Discount factor gamma
+    gae_lambda: float = 0.95,  # Generalized advantage estimation lambda
 ):
     batch_size = int(num_envs * num_steps)
     num_iterations = total_timesteps // batch_size
@@ -99,6 +101,7 @@ def main(
                 obs[step] = next_obs
                 dones[step] = next_done
 
+                # Action logic
                 with torch.no_grad():
                     action, logprob, _, value = agent.get_action_and_value(next_obs)
                 values[step] = value.flatten()
@@ -117,6 +120,20 @@ def main(
                         mlflow.log_metric("episodic_return", info["episode"]["r"], step=global_step)
                         mlflow.log_metric("episodic_length", info["episode"]["l"], step=global_step)
 
+            with torch.no_grad():
+                next_value = agent.get_value(next_obs).reshape(1, -1)
+                advantages = torch.zeros_like(rewards).to(device)
+                lastgaelam = 0
+                for t in reversed(range(num_steps)):
+                    if t == num_steps - 1:
+                        next_nonterminal = 1.0 - next_done
+                        next_values = next_value
+                    else:
+                        next_nonterminal = 1.0 - dones[t + 1]
+                        next_values = values[t + 1]
+                    delta = rewards[t] + gamma * next_values * next_nonterminal - values[t]
+                    advantages[t] = lastgaelam = delta + gamma * gae_lambda * next_nonterminal * lastgaelam
+                returns = advantages + values
 
 if __name__ == "__main__":
     typer.run(main)
