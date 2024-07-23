@@ -1,6 +1,7 @@
 # Training script for DQN based on CleanRL implementation
 # https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/dqn.py
 
+from inspect import currentframe
 from pathlib import Path
 import random
 import time
@@ -16,6 +17,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import typer
 
+from lib.logging import get_function_parameters
 from lib.seeding import set_seed
 
 
@@ -56,6 +58,7 @@ def main(
     gamma: float = 0.99,  # Discount factor,
     train_frequency: int = 10,  # How many episodes accumulated between training steps
 ) -> None:
+    params = get_function_parameters(currentframe())
     set_seed(seed)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -84,6 +87,7 @@ def main(
 
     run_name = f"{env_id}__{exp_name}__{seed}__{int(time.time())}"
     with mlflow.start_run(run_name=run_name):
+        mlflow.log_params(params)
         for global_step in range(total_timesteps):
             # Action logic
             epsilon = linear_schedule(start_eps, end_eps, exploration_fraction * total_timesteps, global_step)

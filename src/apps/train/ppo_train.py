@@ -1,6 +1,7 @@
 # Training script for PPO based on CleanRL implementation
 # https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/ppo.py
 
+from inspect import currentframe
 from pathlib import Path
 import time
 from urllib.parse import urlparse
@@ -15,6 +16,7 @@ import torch.nn as nn
 import torch.optim as optim
 import typer
 
+from lib.logging import get_function_parameters
 from lib.seeding import set_seed
 
 
@@ -71,14 +73,17 @@ def main(
     norm_adv: bool = True,  # Whether to normalize the advantages
     clip_coef: float = 0.2,  # Surrogate clipping coefficient
     clip_vloss: bool = True,  # Whether to clip the value loss
-    ent_coef: float = 0.01,  # Entropy coefficient
-    vf_coef: float = 0.5,  # Value function coefficient
+    ent_coef: float = 0.01,  # Entropy loss coefficient
+    vf_coef: float = 0.5,  # Value function loss coefficient
     max_grad_norm: float = 0.5,  # Maximum gradient norm
-    target_kl: float = None,  # Target KL divergence
+    target_kl: float = None,  # Target KL divergence for early stopping
 ):
+    params = get_function_parameters(currentframe())
+
     batch_size = num_envs * num_steps
     minibatch_size = batch_size // num_minibatches
     num_iterations = total_timesteps // batch_size
+
     set_seed(seed)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -107,6 +112,7 @@ def main(
 
     run_name = f"{env_id}__{exp_name}__{seed}__{int(time.time())}"
     with mlflow.start_run(run_name=run_name):
+        mlflow.log_params(params)
         for iteration in range(1, num_iterations + 1):
             # Learning rate annealing
             if anneal_lr:
