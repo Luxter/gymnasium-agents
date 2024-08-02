@@ -19,3 +19,30 @@ Paper: [Playing Atari with Deep Reinforcement Learning](https://arxiv.org/pdf/13
 | - | - | - |
 
 Paper: [Proximal Policy Optimization Algorithms](https://arxiv.org/pdf/1707.06347)
+
+# Getting started
+
+Prerequisites:
+ - Python >= 3.11
+
+To run DQN training:
+
+```bash
+git clone https://github.com/Luxter/gymnasium-agents.git
+pip install .
+python src/apps/train/dqn_train.py
+```
+
+To run DQN inference:
+```bash
+python src/apps/infer/cleanrl_dqn_infer.py <path_to_trained_model>
+```
+
+By default `<path_to_trained_model>` should point to experiment inside `mlruns` directory.
+
+The experiments are tracking using [MLFlow library](https://mlflow.org/docs/latest/tracking.html). To start the MLFlow server locally run:
+```bash
+mlflow server --host 127.0.0.1 --port 8080
+```
+
+It is worth noting that the inference supports both models trained by this repository or by original [CleanRL repository](https://github.com/vwxyzjn/cleanrl).
