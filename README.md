@@ -1,6 +1,6 @@
 # Gymnasium agents
 
-![Ruff workflow](https://github.com/Luxter/gymnasium-agents/actions/workflows/ruff.yml/badge.svg)
+![Ruff workflow](https://github.com/Luxter/gymnasium-agents/actions/workflows/ruff.yaml/badge.svg)
 
 This repository contains code of basic Reinforcement Learning algorithms implemented for [Gymnasium environments](https://github.com/Farama-Foundation/Gymnasium).
 
