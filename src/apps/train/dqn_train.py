@@ -1,21 +1,21 @@
 # Training script for DQN based on CleanRL implementation
 # https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/dqn.py
 
-from inspect import currentframe
-from pathlib import Path
 import random
 import time
+from inspect import currentframe
+from pathlib import Path
 from urllib.parse import urlparse
 
 import gymnasium as gym
-from loguru import logger
 import mlflow
 import numpy as np
-from stable_baselines3.common.buffers import ReplayBuffer
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import typer
+from loguru import logger
+from stable_baselines3.common.buffers import ReplayBuffer
 
 from lib.logging import get_function_parameters
 from lib.seeding import set_seed
@@ -37,7 +37,7 @@ class QNetwork(nn.Module):
         return self.network(x)
 
 
-def linear_schedule(start_eps: float, end_eps: float, duration: int, t: int) -> float:
+def linear_schedule(start_eps: float, end_eps: float, duration: float, t: int) -> float:
     slope = (end_eps - start_eps) / duration
     return max(start_eps + slope * t, end_eps)
 

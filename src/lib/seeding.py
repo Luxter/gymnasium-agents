@@ -1,8 +1,8 @@
 import random
 
-from loguru import logger
 import numpy as np
 import torch
+from loguru import logger
 
 
 def set_seed(seed: int) -> None:

@@ -36,3 +36,6 @@ Repository = "https://github.com/Luxter/gymnasium-agents"
 
 [tool.black]
 line-length = 119
+
+[tool.flake8]
+max-line-length = 119

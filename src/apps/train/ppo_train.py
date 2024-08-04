@@ -1,20 +1,20 @@
 # Training script for PPO based on CleanRL implementation
 # https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/ppo.py
 
+import time
 from inspect import currentframe
 from pathlib import Path
-import time
 from urllib.parse import urlparse
 
 import gymnasium as gym
-from loguru import logger
 import mlflow
 import numpy as np
 import torch
-from torch.distributions import Categorical
 import torch.nn as nn
 import torch.optim as optim
 import typer
+from loguru import logger
+from torch.distributions import Categorical
 
 from lib.logging import get_function_parameters
 from lib.seeding import set_seed
@@ -76,7 +76,7 @@ def main(
     ent_coef: float = 0.01,  # Entropy loss coefficient
     vf_coef: float = 0.5,  # Value function loss coefficient
     max_grad_norm: float = 0.5,  # Maximum gradient norm
-    target_kl: float = None,  # Target KL divergence for early stopping
+    target_kl: float | None = None,  # Target KL divergence for early stopping
 ):
     params = get_function_parameters(currentframe())
 

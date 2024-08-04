@@ -1,8 +1,8 @@
 import gymnasium as gym
-from loguru import logger
 import numpy as np
 import torch
 import typer
+from loguru import logger
 
 from apps.train.dqn_train import QNetwork
 

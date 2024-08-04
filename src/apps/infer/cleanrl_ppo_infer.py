@@ -1,7 +1,7 @@
 import gymnasium as gym
-from loguru import logger
 import torch
 import typer
+from loguru import logger
 
 from apps.train.ppo_train import Agent
 
