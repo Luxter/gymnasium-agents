@@ -1,5 +1,4 @@
 import gymnasium as gym
-import numpy as np
 import torch
 import typer
 from loguru import logger
