@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
+    rev: v4.6.0
     hooks:
     -   id: check-added-large-files
     -   id: check-ast
@@ -14,14 +14,14 @@ repos:
     -   id: check-xml
     -   id: check-yaml
     -   id: debug-statements
-    -   id: destoyed-symlinks
+    -   id: destroyed-symlinks
     -   id: double-quote-string-fixer
     -   id: end-of-file-fixer
     -   id: mixed-line-ending
     -   id: name-tests-test
     -   id: trailing-whitespace
 -   repo: https://github.com/psf/black
-    rev: stable
+    rev: 24.8.0
     hooks:
     - id: black
       language_version: python3
@@ -34,6 +34,6 @@ repos:
     hooks:
       - id: flake8
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 1.11.1
+    rev: v1.11.1
     hooks:
     -   id: mypy
