@@ -10,8 +10,13 @@ The implementations are inspired by the [CleanRL repository](https://github.com/
 
 ## DQN
 
+
+
+
+
 | <video src="https://github.com/user-attachments/assets/cf9dec3c-a4b2-4fcc-b499-1884c2166e11"/> | <video src="https://github.com/user-attachments/assets/52395ec7-64b0-4c44-96e0-00cac1304496"/> | <video src="https://github.com/user-attachments/assets/61867334-dfc9-4164-bb8f-3811b2819d89"/> |
 | - | - | - |
+| <video src="https://github.com/user-attachments/assets/38b5fc7b-b371-43b8-bdb7-c902721c8c1b"/> | <video src="https://github.com/user-attachments/assets/08fb7c20-b629-427e-b59b-f46f935beeea"/> | <video src="https://github.com/user-attachments/assets/8aea2634-1164-4e95-8fea-948410036d56"/> |
 
 Paper: [Playing Atari with Deep Reinforcement Learning](https://arxiv.org/pdf/1312.5602)
 
@@ -19,6 +24,9 @@ Paper: [Playing Atari with Deep Reinforcement Learning](https://arxiv.org/pdf/13
 
 | <video src="https://github.com/user-attachments/assets/5eb83f8a-592b-4054-969e-6cb0e9d6ef3d"/> | <video src="https://github.com/user-attachments/assets/553639f6-198e-4b4b-8d7b-960405115925"/> | <video src="https://github.com/user-attachments/assets/2c5ecd9e-114e-478e-89f8-907e5f263e84"/>
 | - | - | - |
+| <video src="https://github.com/user-attachments/assets/1d61bf3e-82bb-4357-b791-0393151d32eb"/> | <video src="https://github.com/user-attachments/assets/d3eddc48-6340-425d-8672-72730fe1c2a7"/> | <video src="https://github.com/user-attachments/assets/ba83c09f-5b35-4e11-9eb7-de32db39987b"/> |
+
+
 
 Paper: [Proximal Policy Optimization Algorithms](https://arxiv.org/pdf/1707.06347)
 
